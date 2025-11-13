@@ -2,12 +2,30 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search, Upload, Mail } from 'lucide-react';
+import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search, Upload, Mail, GripVertical, Loader } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
 import { supabaseAdmin } from '../../lib/supabaseClient-carteles';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getLocalVideoDuration } from '../../lib/videoUtils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Company {
   id: string;
@@ -75,6 +93,117 @@ interface SelectedImage {
   videoType?: 'local' | 'youtube';
   duration: number;
 }
+
+// Componente para items draggables
+const SortableItem: React.FC<{
+  img: SelectedImage;
+  index: number;
+  selectedImages: SelectedImage[];
+  onUpdateDuration: (name: string, duration: number) => void;
+  onRemove: (index: number) => void;
+}> = ({ img, index, selectedImages, onUpdateDuration, onRemove }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: img.name });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="group relative flex items-center gap-2 p-3 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+    >
+      {/* Icono de arrastre */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
+        title="Arrastra para reordenar"
+      >
+        <GripVertical className="w-5 h-5" />
+      </button>
+
+      {/* Número y tipo de elemento */}
+      <div className="flex items-center gap-2 min-w-[24px] flex-shrink-0">
+        <span className="text-sm text-gray-600">{index + 1}.</span>
+        {img.type === 'image' ? (
+          <ImageIcon className="w-4 h-4 text-blue-500" />
+        ) : (
+          <Video className="w-4 h-4 text-purple-500" />
+        )}
+      </div>
+
+      {/* Nombre y duración */}
+      <div className="flex-1 flex items-center justify-between min-w-0">
+        <span className="truncate max-w-[200px] text-sm" title={img.name}>
+          {img.name}
+        </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <select
+            value={img.duration}
+            onChange={(e) => onUpdateDuration(img.name, Number(e.target.value))}
+            className="px-2 py-1 text-sm border border-gray-300 rounded hover:border-blue-500 focus:border-blue-500"
+          >
+            {[2, 3, 5, 8, 10, 15, 20, 30, 45, 60].map((value) => (
+              <option key={value} value={value}>
+                {value}s
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Vista previa al hover */}
+      <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-1">
+          {img.type === 'image' ? (
+            <img
+              src={img.url}
+              alt={img.name}
+              className="w-48 h-32 object-contain bg-gray-100 rounded"
+            />
+          ) : (
+            <div className="w-48 h-32 bg-gray-100 rounded flex items-center justify-center">
+              {img.videoType === 'youtube' ? (
+                <iframe
+                  src={`${img.url.replace('watch?v=', 'embed/')}?autoplay=0`}
+                  className="w-full h-full rounded"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Video className="w-8 h-8 text-gray-400" />
+                  <span className="text-xs text-gray-500">Vista previa no disponible</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Botón de eliminar */}
+      <button
+        onClick={() => onRemove(index)}
+        className="p-1 rounded-full text-red-500 hover:bg-red-50 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Eliminar"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </motion.div>
+  );
+};
 
 const CarouselPreview: React.FC<{ 
   images: SelectedImage[];
@@ -267,6 +396,16 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   userEmail,
   userName
 }) => {
+  // Configurar sensores para drag-drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      distance: 8,
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [selectedEmpresa, setSelectedEmpresa] = useState<string>('');
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
@@ -308,6 +447,20 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [isLoadingCarousels, setIsLoadingCarousels] = useState(false);
   const [carouselName, setCarouselName] = useState<string>('Playlist sin nombre');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Handler para drag-drop
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setSelectedImages((items) => {
+        const oldIndex = items.findIndex((item) => item.name === active.id);
+        const newIndex = items.findIndex((item) => item.name === over.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -1271,19 +1424,38 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     }
   }, [showSearchModal]);
 
-  // Modificar el VideoModal para incluir la duración
-  const handleAddVideo = () => {
+  // Agregar video con auto-detección de duración
+  const handleAddVideo = async () => {
     if (videoUrl) {
       const videoName = videoType === 'youtube' 
         ? `youtube-${new Date().getTime()}`
         : `local-${new Date().getTime()}`;
+      
+      // Para videos locales, intentar detectar duración
+      let duration = 30; // Default
+      if (videoType === 'local' && videoUrl.startsWith('blob:')) {
+        try {
+          // Si es un blob local, intentar obtener duración
+          const video = document.createElement('video');
+          video.src = videoUrl;
+          await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+              duration = Math.round(video.duration) || 30;
+              resolve(null);
+            };
+            video.onerror = () => resolve(null);
+          });
+        } catch (error) {
+          console.error('Error detectando duración:', error);
+        }
+      }
       
       setSelectedImages([...selectedImages, {
         url: videoUrl,
         name: videoName,
         type: 'video',
         videoType,
-        duration: 30 // Duración por defecto para videos
+        duration
       }]);
       setShowVideoModal(false);
       setVideoUrl('');
@@ -1517,106 +1689,32 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       <li>• Tiempo total de reproducción: {selectedImages.reduce((total, img) => total + img.duration, 0)} segundos</li>
                       {selectedImages.length > 0 && (
                         <li className="mt-2">
-                          <p className="font-medium text-gray-900 mb-1">Detalles de elementos:</p>
-                          <div className="pl-4 space-y-2">
-                            {selectedImages.map((img, index) => (
-                              <div 
-                                key={img.name} 
-                                className="group relative flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              >
-                                {/* Número y tipo de elemento */}
-                                <div className="flex items-center gap-2 min-w-[24px]">
-                                  <span>{index + 1}.</span>
-                                  {img.type === 'image' ? <ImageIcon className="w-4 h-4" /> : <Video className="w-4 h-4" />}
-                                </div>
-
-                                {/* Nombre y duración */}
-                                <div className="flex-1 flex items-center justify-between">
-                                  <span className="truncate max-w-[200px]" title={img.name}>{img.name}</span>
-                                  <div className="flex items-center gap-2">
-                                    <select
-                                      value={img.duration}
-                                      onChange={(e) => updateImageDuration(img.name, Number(e.target.value))}
-                                      className="px-2 py-1 text-sm border border-gray-300 rounded hover:border-blue-500 focus:border-blue-500"
-                                    >
-                                      {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
-                                        <option key={value} value={value}>{value} segundos</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </div>
-
-                                {/* Vista previa al hover */}
-                                <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                  <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-1">
-                                    {img.type === 'image' ? (
-                                      <img
-                                        src={img.url}
-                                        alt={img.name}
-                                        className="w-48 h-32 object-contain bg-gray-100 rounded"
-                                      />
-                                    ) : (
-                                      <div className="w-48 h-32 bg-gray-100 rounded flex items-center justify-center">
-                                        {img.videoType === 'youtube' ? (
-                                          <iframe
-                                            src={`${img.url.replace('watch?v=', 'embed/')}?autoplay=0`}
-                                            className="w-full h-full rounded"
-                                            allowFullScreen
-                                          />
-                                        ) : (
-                                          <div className="flex flex-col items-center gap-2">
-                                            <Video className="w-8 h-8 text-gray-400" />
-                                            <span className="text-xs text-gray-500">Vista previa no disponible</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Botones de acción */}
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                  <button
-                                    onClick={() => {
-                                      const newImages = [...selectedImages];
-                                      if (index > 0) {
-                                        [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
-                                        setSelectedImages(newImages);
-                                      }
+                          <p className="font-medium text-gray-900 mb-3">Detalles de elementos (Arrastra para reordenar):</p>
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                          >
+                            <SortableContext
+                              items={selectedImages.map((img) => img.name)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              <div className="pl-4 space-y-2">
+                                {selectedImages.map((img, index) => (
+                                  <SortableItem
+                                    key={img.name}
+                                    img={img}
+                                    index={index}
+                                    selectedImages={selectedImages}
+                                    onUpdateDuration={updateImageDuration}
+                                    onRemove={(idx) => {
+                                      setSelectedImages(selectedImages.filter((_, i) => i !== idx));
                                     }}
-                                    disabled={index === 0}
-                                    className={`p-1 rounded-full ${index === 0 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-200'}`}
-                                    title="Mover arriba"
-                                  >
-                                    <ChevronLeft className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      const newImages = [...selectedImages];
-                                      if (index < selectedImages.length - 1) {
-                                        [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
-                                        setSelectedImages(newImages);
-                                      }
-                                    }}
-                                    disabled={index === selectedImages.length - 1}
-                                    className={`p-1 rounded-full ${index === selectedImages.length - 1 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-200'}`}
-                                    title="Mover abajo"
-                                  >
-                                    <ChevronRight className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setSelectedImages(selectedImages.filter((_, i) => i !== index));
-                                    }}
-                                    className="p-1 rounded-full text-red-500 hover:bg-red-50"
-                                    title="Eliminar"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                </div>
+                                  />
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            </SortableContext>
+                          </DndContext>
                         </li>
                       )}
                       {carouselUrl && (
