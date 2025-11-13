@@ -31,6 +31,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { ExportPoster } from './ExportPoster';
 import ReactDOM from 'react-dom/client';
 import { FinancingOption } from '../../types/financing';
+import { getEmpresas, type Empresa } from '../../lib/supabaseClient-sucursales';
+import { FalabellaDebug } from '../Debug/FalabellaDebug';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -335,6 +337,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     url: string;
     created_at: string;
   }>>([]);
+  const [empresasFromDB, setEmpresasFromDB] = useState<Empresa[]>([]);;
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -392,7 +395,42 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     navigate('/print-view', { state: printData });
   };
 
-  const companyDetails = COMPANIES.find(c => c.id === company);
+  // Combinar empresas estáticas con empresas de Supabase
+  const combinedCompanies = React.useMemo(() => {
+    const staticCompanies = COMPANIES;
+    const dbCompanies = empresasFromDB.map(emp => ({
+      id: emp.nombre.toLowerCase().replace(/\s+/g, '-'),
+      name: emp.nombre,
+      logo: emp.logo || 'https://via.placeholder.com/40',
+      empresaId: emp.id
+    }));
+    
+    console.log('🔄 Combinando empresas:');
+    console.log('  - Estáticas:', staticCompanies.length, staticCompanies.map(c => c.name));
+    console.log('  - De BD:', dbCompanies.length, dbCompanies.map(c => c.name));
+    
+    // Separar Falabella del resto
+    const falabella = dbCompanies.find(c => c.name.toLowerCase() === 'falabella');
+    const otherDbCompanies = dbCompanies.filter(c => c.name.toLowerCase() !== 'falabella');
+    
+    // Combinar: Falabella primero, luego estáticas, luego el resto de BD
+    const combined: typeof staticCompanies = [];
+    if (falabella) {
+      combined.push(falabella);
+    }
+    combined.push(...staticCompanies);
+    otherDbCompanies.forEach(dbComp => {
+      if (!combined.find(c => c.name.toLowerCase() === dbComp.name.toLowerCase())) {
+        combined.push(dbComp);
+      }
+    });
+    
+    console.log('  - Total combinadas:', combined.length, combined.map(c => c.name));
+    
+    return combined;
+  }, [empresasFromDB]);
+
+  const companyDetails = combinedCompanies.find(c => c.id === company);
   const empresaId = companyDetails?.empresaId || 0;
   console.log('Company selected:', company);
   console.log('Company details:', companyDetails);
@@ -417,6 +455,42 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       return [...prev, productId];
     });
   };
+
+  // Cargar empresas desde Supabase
+  useEffect(() => {
+    const loadEmpresas = async () => {
+      try {
+        // Primero, intentar inicializar Falabella
+        console.log('🔍 Verificando si Falabella existe...');
+        const { addFalabellaToDatabase } = await import('../../lib/addFalabellaData');
+        
+        try {
+          const empresasActuales = await getEmpresas();
+          const falabellaExists = empresasActuales.some(emp => emp.nombre === 'Falabella');
+          
+          if (!falabellaExists) {
+            console.log('🏢 Falabella no encontrada. Insertando...');
+            const result = await addFalabellaToDatabase();
+            console.log('📝 Resultado:', result);
+          } else {
+            console.log('✅ Falabella ya existe');
+          }
+        } catch (initError) {
+          console.error('⚠️  Error al inicializar Falabella:', initError);
+        }
+        
+        // Luego, cargar todas las empresas
+        console.log('📊 Cargando todas las empresas...');
+        const empresas = await getEmpresas();
+        console.log('✅ Empresas cargadas:', empresas.length, empresas.map(e => e.nombre));
+        setEmpresasFromDB(empresas);
+      } catch (error) {
+        console.error('❌ Error al cargar empresas:', error);
+      }
+    };
+
+    loadEmpresas();
+  }, []);
 
   // Simular carga inicial
   useEffect(() => {
@@ -769,8 +843,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   <CompanySelect
                     value={company}
                     onChange={handleCompanyChange}
-                    companies={COMPANIES}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                    companies={combinedCompanies}
                   />
                 </div>
               </div>
@@ -1258,6 +1331,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             )}
           </main>
         </div>
+        <FalabellaDebug />
       </div>
     </HeaderProvider>
   );

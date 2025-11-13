@@ -118,6 +118,15 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     });
   };
 
+  // Obtener el texto de puntos según la empresa
+  const getPointsText = () => {
+    const companyName = company?.name?.toLowerCase() || '';
+    if (companyName.includes('falabella')) {
+      return 'Puntos Fala';
+    }
+    return 'PUNTOS JUMBO MÁS';
+  };
+
   // Calcular el precio con descuento
   const calculatePrice = () => {
     if (!promotion) return {
@@ -397,7 +406,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           <div className="text-right">
             {points && (
               <div className="text-base font-bold">
-                SUMÁ {points} PUNTOS JUMBO MÁS
+                SUMÁ {points} {getPointsText()}
               </div>
             )}
           </div>
@@ -558,7 +567,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
                         <div className="flex items-center gap-4">
                           <div className="text-[16px] font-bold text-right">
-                            SUMÁ {points} PUNTOS JUMBO MÁS
+                            SUMÁ {points} {getPointsText()}
                           </div>
                           <div className="flex items-center gap-2">
                             <img 
