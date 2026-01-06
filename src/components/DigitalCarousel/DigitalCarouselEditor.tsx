@@ -6,7 +6,7 @@ import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, C
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
-import { filterEnabledCompanies, initializeCompanySetting } from '../../lib/companySettings';
+import { filterEnabledCompanies, initializeCompanySetting, isCompanyEnabled } from '../../lib/companySettings';
 import { supabaseAdmin } from '../../lib/supabaseClient-carteles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getLocalVideoDuration } from '../../lib/videoUtils';
@@ -1273,6 +1273,12 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
       const searchTermLower = localSearchTerm.toLowerCase();
       return savedCarousels.filter(carousel => {
         const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
+        
+        // Filtrar por empresa habilitada
+        if (!empresa || !isCompanyEnabled(carousel.empresa_id)) {
+          return false;
+        }
+        
         // Buscar coincidencias en los dispositivos
         const deviceMatches = carousel.devices.some(deviceType => {
           const device = devices.find(d => d.value === deviceType);

@@ -33,7 +33,7 @@ import ReactDOM from 'react-dom/client';
 import { FinancingOption } from '../../types/financing';
 import { getEmpresas, type Empresa } from '../../lib/supabaseClient-sucursales';
 import { FalabellaDebug } from '../Debug/FalabellaDebug';
-import { filterEnabledCompanies, initializeCompanySetting } from '../../lib/companySettings';
+import { filterEnabledCompanies, initializeCompanySetting, isCompanyEnabled, getCompanySettings } from '../../lib/companySettings';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -749,6 +749,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       }
 
       if (data) {
+        // Obtener configuración de empresas habilitadas
+        const companySettings = getCompanySettings();
+        
         const sortedResults = await Promise.all(data
           .filter(file => file.name.endsWith('.png'))
           .map(async file => {
@@ -760,7 +763,25 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             };
           }));
 
-        const orderedResults = sortedResults
+        // Filtrar carteles por empresas habilitadas
+        const filteredResults = sortedResults.filter(poster => {
+          // Extraer el nombre de la empresa del nombre del archivo
+          // Formato: empresa_producto_id.png (ej: sodimac_fanta_pack_x6_BEB-0...)
+          const fileName = poster.name.toLowerCase();
+          
+          // Verificar si el cartel pertenece a una empresa habilitada
+          // Buscar coincidencia con nombres de empresas en settings
+          for (const [, setting] of Object.entries(companySettings)) {
+            const companyName = setting.name.toLowerCase().replace(/\s+/g, '_');
+            if (fileName.startsWith(companyName) && !setting.enabled) {
+              return false; // Empresa deshabilitada, filtrar este cartel
+            }
+          }
+          
+          return true; // Empresa habilitada o no identificada (mostrar por defecto)
+        });
+
+        const orderedResults = filteredResults
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         setAllPosters(orderedResults);
