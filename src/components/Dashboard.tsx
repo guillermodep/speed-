@@ -798,6 +798,93 @@ const recentActivity: Activity[] = [
   },
   {
     id: '15',
+    type: 'poster',
+    title: 'Carteles Construcción',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T15:30:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Sodimac Javier Prado', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Angamos', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Mega Plaza', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac San Miguel', printed: false },
+      { name: 'Sodimac Atocongo', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' }
+    ],
+    company: 'Sodimac',
+    companyLogo: '/images/Sodimac logo.jpg'
+  },
+  {
+    id: '16',
+    type: 'promotion',
+    title: 'Promoción Cyber Construcción',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T14:15:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Sodimac Arequipa', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Trujillo', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Chiclayo', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Cusco', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' }
+    ],
+    company: 'Sodimac',
+    companyLogo: '/images/Sodimac logo.jpg'
+  },
+  {
+    id: '17',
+    type: 'template',
+    title: 'Plantilla Ofertas Pisos',
+    description: 'Enviado a 3 sucursales',
+    timestamp: new Date('2024-01-15T13:00:00'),
+    status: 'pending',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Sodimac Javier Prado', printed: false },
+      { name: 'Sodimac Angamos', printed: false },
+      { name: 'Sodimac Piura', printed: false }
+    ],
+    company: 'Sodimac',
+    companyLogo: '/images/Sodimac logo.jpg'
+  },
+  {
+    id: '18',
+    type: 'poster',
+    title: 'Carteles Baños y Grifería',
+    description: 'Enviado a 6 sucursales',
+    timestamp: new Date('2024-01-15T11:45:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Sodimac Javier Prado', printed: false },
+      { name: 'Sodimac Mega Plaza', printed: false },
+      { name: 'Sodimac San Miguel', printed: false },
+      { name: 'Sodimac Arequipa', printed: false },
+      { name: 'Sodimac Trujillo', printed: false },
+      { name: 'Sodimac Chiclayo', printed: false }
+    ],
+    company: 'Sodimac',
+    companyLogo: '/images/Sodimac logo.jpg'
+  },
+  {
+    id: '19',
+    type: 'promotion',
+    title: 'Promoción 2x1 Pinturas',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T10:30:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Sodimac Angamos', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Atocongo', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Piura', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Sodimac Cusco', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' }
+    ],
+    company: 'Sodimac',
+    companyLogo: '/images/Sodimac logo.jpg'
+  },
+  {
+    id: '20',
     type: 'template',
     title: 'Carteles Back to School',
     description: 'Enviado a 5 sucursales',
@@ -1176,7 +1263,19 @@ const STORE_COMPLIANCE_DATA = {
       { name: 'Tigre', compliance: 92, total: 420, printed: 386 },
       { name: 'Moreno', compliance: 86, total: 340, printed: 292 },
       { name: 'Lomas de Zamora', compliance: 89, total: 560, printed: 498 },
-      { name: 'Quilmes', compliance: 87, total: 490, printed: 426 }
+      { name: 'Quilmes', compliance: 87, total: 490, printed: 426 },
+      
+      // Sodimac
+      { name: 'Sodimac Javier Prado', compliance: 93, total: 380, printed: 353, company: 'Sodimac' },
+      { name: 'Sodimac Angamos', compliance: 90, total: 340, printed: 306, company: 'Sodimac' },
+      { name: 'Sodimac Mega Plaza', compliance: 88, total: 420, printed: 370, company: 'Sodimac' },
+      { name: 'Sodimac San Miguel', compliance: 91, total: 310, printed: 282, company: 'Sodimac' },
+      { name: 'Sodimac Atocongo', compliance: 87, total: 290, printed: 252, company: 'Sodimac' },
+      { name: 'Sodimac Arequipa', compliance: 94, total: 360, printed: 338, company: 'Sodimac' },
+      { name: 'Sodimac Trujillo', compliance: 89, total: 320, printed: 285, company: 'Sodimac' },
+      { name: 'Sodimac Chiclayo', compliance: 92, total: 280, printed: 258, company: 'Sodimac' },
+      { name: 'Sodimac Piura', compliance: 86, total: 260, printed: 224, company: 'Sodimac' },
+      { name: 'Sodimac Cusco', compliance: 90, total: 300, printed: 270, company: 'Sodimac' }
     ]
   },
   promotions: {
@@ -1450,7 +1549,8 @@ const PrintComplianceChart: React.FC<{
       'easy': '20',
       'jumbo': '17',
       'disco': '18',
-      'vea': '19'
+      'vea': '19',
+      'sodimac': '0'
     };
     
     data = data.filter(store => {
@@ -1902,7 +2002,8 @@ export default function Dashboard({
         'easy': '20',    // Easy (MDH)
         'jumbo': '17',   // Jumbo
         'disco': '18',   // Disco
-        'vea': '19'      // Vea
+        'vea': '19',     // Vea
+        'sodimac': '0'   // Sodimac
       };
       
       const companyId = companyIdMap[company.value];
@@ -1921,7 +2022,8 @@ export default function Dashboard({
         'easy': '20',
         'jumbo': '17',
         'disco': '18',
-        'vea': '19'
+        'vea': '19',
+        'sodimac': '0'
       };
       
       const companyLower = activity.company.toLowerCase();
