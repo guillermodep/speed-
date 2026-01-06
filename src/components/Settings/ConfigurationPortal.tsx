@@ -253,7 +253,14 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
         .select('*');
 
       if (error) throw error;
-      setCompanies(data || []);
+      
+      // Inicializar configuración de empresas en localStorage
+      const allCompanies = data || [];
+      allCompanies.forEach(company => {
+        initializeCompanySetting(String(company.id), company.nombre);
+      });
+      
+      setCompanies(allCompanies);
     } catch (err) {
       console.error('Error fetching companies:', err);
     }

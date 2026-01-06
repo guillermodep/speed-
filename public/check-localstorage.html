@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check localStorage</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        pre { background: #f0f0f0; padding: 15px; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>localStorage Inspector</h1>
+    <button onclick="check()">Verificar Configuración</button>
+    <button onclick="clear()">Limpiar Todo</button>
+    <div id="output"></div>
+    
+    <script>
+        function check() {
+            const settings = localStorage.getItem('speed_company_settings');
+            const output = document.getElementById('output');
+            
+            if (settings) {
+                const parsed = JSON.parse(settings);
+                let html = '<h2>Configuración Actual:</h2><pre>' + JSON.stringify(parsed, null, 2) + '</pre>';
+                
+                html += '<h3>Resumen:</h3><ul>';
+                for (const [id, data] of Object.entries(parsed)) {
+                    const status = data.enabled ? '✅ Habilitada' : '❌ Deshabilitada';
+                    html += `<li><strong>${data.name}</strong> (ID: ${id}): ${status}</li>`;
+                }
+                html += '</ul>';
+                
+                output.innerHTML = html;
+            } else {
+                output.innerHTML = '<h2>❌ No hay configuración guardada</h2>';
+            }
+        }
+        
+        function clear() {
+            if (confirm('¿Limpiar localStorage?')) {
+                localStorage.removeItem('speed_company_settings');
+                alert('✅ Limpiado. Recarga /digital-carousel');
+            }
+        }
+        
+        check();
+    </script>
+</body>
+</html>

@@ -88,11 +88,12 @@ export const getEnabledCompanies = (): string[] => {
 /**
  * Filtra una lista de empresas para mostrar solo las habilitadas
  */
-export const filterEnabledCompanies = <T extends { id: string | number; name?: string; nombre?: string }>(
+export const filterEnabledCompanies = <T extends { id: string | number; name?: string; nombre?: string; empresaId?: number }>(
   companies: T[]
 ): T[] => {
   return companies.filter(company => {
-    const companyId = String(company.id);
+    // Usar empresaId si está disponible, sino usar company.id directamente
+    const companyId = company.empresaId ? String(company.empresaId) : String(company.id);
     return isCompanyEnabled(companyId);
   });
 };

@@ -72,36 +72,6 @@ const FINANCING_OPTIONS = [
         ]
       }
     ]
-  },
-  {
-    bank: 'Cencosud',
-    logo: '/images/banks/cencosud.png',
-    cards: [
-      {
-        name: 'Tarjeta Cencosud',
-        image: '/images/banks/cencosud.png',
-        plans: [
-          '6 cuotas sin interés',
-          '12 cuotas sin interés',
-          '18 cuotas sin Interés'
-        ]
-      }
-    ]
-  },
-  {
-    bank: 'CencoPay',
-    logo: '/images/banks/cencopay.png',
-    cards: [
-      {
-        name: 'CencoPay',
-        image: '/images/banks/cencopay.png',
-        plans: [
-          '6 cuotas sin interés',
-          '12 cuotas sin interés',
-          '18 cuotas sin Interés'
-        ]
-      }
-    ]
   }
 ];
 

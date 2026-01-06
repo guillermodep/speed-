@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reset Company Settings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .danger { background: #ef4444; color: white; }
+        .info { background: #3b82f6; color: white; }
+        pre {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Reset Company Settings</h1>
+    
+    <div>
+        <button class="info" onclick="showSettings()">Ver Configuración Actual</button>
+        <button class="danger" onclick="resetSettings()">Limpiar localStorage</button>
+    </div>
+    
+    <div id="output"></div>
+    
+    <script>
+        function showSettings() {
+            const settings = localStorage.getItem('speed_company_settings');
+            const output = document.getElementById('output');
+            
+            if (settings) {
+                const parsed = JSON.parse(settings);
+                output.innerHTML = '<h2>Configuración Actual:</h2><pre>' + 
+                    JSON.stringify(parsed, null, 2) + '</pre>';
+            } else {
+                output.innerHTML = '<h2>No hay configuración guardada</h2>';
+            }
+        }
+        
+        function resetSettings() {
+            if (confirm('¿Estás seguro de que quieres limpiar la configuración de empresas?')) {
+                localStorage.removeItem('speed_company_settings');
+                document.getElementById('output').innerHTML = 
+                    '<h2 style="color: green;">✅ Configuración limpiada. Recarga la página principal.</h2>';
+            }
+        }
+        
+        // Mostrar automáticamente al cargar
+        showSettings();
+    </script>
+</body>
+</html>

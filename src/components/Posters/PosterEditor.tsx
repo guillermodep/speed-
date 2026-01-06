@@ -33,7 +33,7 @@ import ReactDOM from 'react-dom/client';
 import { FinancingOption } from '../../types/financing';
 import { getEmpresas, type Empresa } from '../../lib/supabaseClient-sucursales';
 import { FalabellaDebug } from '../Debug/FalabellaDebug';
-import { filterEnabledCompanies } from '../../lib/companySettings';
+import { filterEnabledCompanies, initializeCompanySetting } from '../../lib/companySettings';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -385,6 +385,12 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   // Combinar empresas estáticas con empresas de Supabase
   const combinedCompanies = React.useMemo(() => {
     const staticCompanies = COMPANIES;
+    
+    // Inicializar empresas estáticas en localStorage
+    staticCompanies.forEach(company => {
+      initializeCompanySetting(String(company.empresaId), company.name);
+    });
+    
     const dbCompanies = empresasFromDB.map(emp => ({
       id: emp.nombre.toLowerCase().replace(/\s+/g, '-'),
       name: emp.nombre,

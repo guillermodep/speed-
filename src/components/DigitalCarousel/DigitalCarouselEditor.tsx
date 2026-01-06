@@ -6,7 +6,7 @@ import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, C
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
-import { filterEnabledCompanies } from '../../lib/companySettings';
+import { filterEnabledCompanies, initializeCompanySetting } from '../../lib/companySettings';
 import { supabaseAdmin } from '../../lib/supabaseClient-carteles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getLocalVideoDuration } from '../../lib/videoUtils';
@@ -498,6 +498,12 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
         }
 
         const data = await getEmpresas();
+        
+        // Inicializar empresas en localStorage
+        data.forEach(empresa => {
+          initializeCompanySetting(String(empresa.id), empresa.nombre);
+        });
+        
         const enabledData = filterEnabledCompanies(data);
         setEmpresas(enabledData);
       } catch (error) {
