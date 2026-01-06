@@ -74,10 +74,12 @@ export const SendingModal: React.FC<SendingModalProps> = ({
   const locationOptions = sucursales.map(s => ({
     id: s.id.toString(),
     name: s.nombre,
-    region: s.region,
     direccion: s.direccion,
     email: s.email
   }));
+
+  console.log('Sucursales disponibles:', sucursales.length);
+  console.log('Location options:', locationOptions);
 
   useEffect(() => {
     if (isOpen) {

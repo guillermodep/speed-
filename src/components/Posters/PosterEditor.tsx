@@ -33,6 +33,7 @@ import ReactDOM from 'react-dom/client';
 import { FinancingOption } from '../../types/financing';
 import { getEmpresas, type Empresa } from '../../lib/supabaseClient-sucursales';
 import { FalabellaDebug } from '../Debug/FalabellaDebug';
+import { filterEnabledCompanies } from '../../lib/companySettings';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -93,7 +94,7 @@ const PROMOTIONS: Promotion[] = [
     startDate: '2024-01-01',
     endDate: '2024-12-31',
     bank: 'Cencosud',
-    isActive: true,
+    isActive: false,
     selectedBanks: ['Cencosud'],
     cardOptions: ['Todas las tarjetas']
   },
@@ -267,20 +268,6 @@ const FINANCING_OPTIONS: FinancingOption[] = [
     cardName: 'Mastercard',
     cardImage: '/images/banks/mastercard-logo.png',
     plan: 'Hasta 3 cuotas sin interés'
-  },
-  {
-    bank: 'Cencosud',
-    logo: '/images/banks/cencosud-logo.png',
-    cardName: 'Tarjeta Cencosud',
-    cardImage: '/images/banks/cencosud-logo.png',
-    plan: '20% OFF + 6 cuotas sin interés'
-  },
-  {
-    bank: 'CencoPay',
-    logo: '/images/banks/cencopay-logo.png',
-    cardName: 'CencoPay',
-    cardImage: '/images/banks/cencopay-logo.png',
-    plan: '25% OFF + 3 cuotas sin interés'
   }
 ];
 
@@ -427,7 +414,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     
     console.log('  - Total combinadas:', combined.length, combined.map(c => c.name));
     
-    return combined;
+    // Filtrar solo empresas habilitadas
+    const enabledCompanies = filterEnabledCompanies(combined);
+    console.log('  - Empresas habilitadas:', enabledCompanies.length, enabledCompanies.map(c => c.name));
+    
+    return enabledCompanies;
   }, [empresasFromDB]);
 
   const companyDetails = combinedCompanies.find(c => c.id === company);
@@ -477,6 +468,25 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
           }
         } catch (initError) {
           console.error('⚠️  Error al inicializar Falabella:', initError);
+        }
+
+        // Inicializar Sodimac
+        console.log('🔍 Verificando si Sodimac existe...');
+        const { addSodimacToDatabase } = await import('../../lib/addSodimacData');
+        
+        try {
+          const empresasActuales = await getEmpresas();
+          const sodimacExists = empresasActuales.some(emp => emp.nombre === 'Sodimac');
+          
+          if (!sodimacExists) {
+            console.log('🏢 Sodimac no encontrada. Insertando...');
+            const result = await addSodimacToDatabase();
+            console.log('📝 Resultado:', result);
+          } else {
+            console.log('✅ Sodimac ya existe');
+          }
+        } catch (initError) {
+          console.error('⚠️  Error al inicializar Sodimac:', initError);
         }
         
         // Luego, cargar todas las empresas
@@ -890,7 +900,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   <PromotionSelect
                     value={promotion}
                     onChange={setPromotion}
-                    promotions={PROMOTIONS}
+                    promotions={PROMOTIONS.filter(p => p.isActive)}
                     className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                   />
                 </div>

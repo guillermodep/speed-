@@ -7,6 +7,7 @@ import { AddCompanyModal } from './AddCompanyModal';
 import { LDAPConfigModal } from './LDAPConfigModal';
 import NewUserModal from './NewUserModal';
 import { Tooltip } from 'react-tooltip';
+import { getCompanySettings, toggleCompanyEnabled, initializeCompanySetting } from '../../lib/companySettings';
 
 interface ConfigurationPortalProps {
   isOpen: boolean;
@@ -152,6 +153,7 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   const [selectedLogo, setSelectedLogo] = useState<string>('');
   const [isLDAPModalOpen, setIsLDAPModalOpen] = useState(false);
   const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
+  const [companySettings, setCompanySettings] = useState(getCompanySettings());
 
   // Simulación de datos de disponibilidad por hora
   const generateHourlyData = () => {
@@ -168,6 +170,19 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   };
 
   const [hourlyStats] = useState(generateHourlyData());
+
+  // Bloquear scroll del body cuando el modal está abierto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && currentUser.role === 'admin') {
@@ -345,6 +360,18 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
     setIsLDAPModalOpen(false);
   };
 
+  const handleToggleCompany = (companyId: number, companyName: string, currentlyEnabled: boolean) => {
+    const newEnabled = !currentlyEnabled;
+    toggleCompanyEnabled(String(companyId), companyName, newEnabled);
+    setCompanySettings(getCompanySettings());
+    showNotification('success', `${companyName} ${newEnabled ? 'habilitada' : 'deshabilitada'} correctamente`);
+  };
+
+  const isCompanyEnabledInSettings = (companyId: number): boolean => {
+    const settings = companySettings[String(companyId)];
+    return settings ? settings.enabled : true; // Por defecto habilitada
+  };
+
   const handleEditUser = (user: any) => {
     if (user.role === 'admin') {
       alert('No se puede editar al usuario administrador.');
@@ -356,12 +383,20 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          // Click en el backdrop no hace nada
+        }
+      }}
+    >
       <motion.div
         initial={{ opacity: 1, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 1, scale: 0.95 }}
         className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header - fijo en la parte superior */}
         <div className="p-6 border-b border-gray-200 flex justify-between items-center shrink-0">
@@ -414,8 +449,8 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
         </div>
 
         {/* Content - área scrolleable */}
-        <div className="flex-1 min-h-0">
-          <div className="h-full overflow-y-auto overflow-x-hidden p-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-6">
             {activeTab === 'general' && (
               <div className="space-y-6">
                 {currentUser.role === 'admin' && (
@@ -498,23 +533,66 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                           Agregar Empresa
                         </button>
                       </div>
-                      <div className="flex flex-wrap justify-center gap-6">
-                        {companies.map(company => (
-                          <div key={company.id} className="relative group">
-                            <img
-                              src={company.logo}
-                              alt={company.nombre}
-                              className="h-16 w-auto object-contain cursor-pointer transition-transform duration-200 group-hover:scale-105 group-hover:shadow-lg"
-                              onClick={() => handleEditCompany(company)}
-                            />
-                            <button
-                              onClick={() => handleDeleteCompany(company.id)}
-                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {companies.map(company => {
+                          const isEnabled = isCompanyEnabledInSettings(company.id);
+                          return (
+                            <div 
+                              key={company.id} 
+                              className={`bg-white p-4 rounded-lg border-2 transition-all ${
+                                isEnabled ? 'border-green-200' : 'border-gray-200 opacity-60'
+                              }`}
                             >
-                              X
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex items-center justify-between mb-3">
+                                <img
+                                  src={company.logo}
+                                  alt={company.nombre}
+                                  className="h-12 w-auto object-contain"
+                                />
+                                <button
+                                  onClick={() => handleToggleCompany(company.id, company.nombre, isEnabled)}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    isEnabled ? 'bg-green-500' : 'bg-gray-300'
+                                  }`}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                      isEnabled ? 'translate-x-6' : 'translate-x-1'
+                                    }`}
+                                  />
+                                </button>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-700">{company.nombre}</span>
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleEditCompany(company)}
+                                    className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
+                                    title="Editar"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCompany(company.id)}
+                                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="mt-2">
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                  isEnabled 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {isEnabled ? 'Habilitada' : 'Deshabilitada'}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </>

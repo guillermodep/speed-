@@ -4,7 +4,7 @@ import Select from 'react-select';
 interface Location {
   id: string;
   name: string;
-  region: string;
+  region?: string;
   direccion?: string;
   coordinates?: [number, number];
   address?: string;

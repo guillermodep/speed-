@@ -124,6 +124,9 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     if (companyName.includes('falabella')) {
       return 'Puntos Fala';
     }
+    if (companyName.includes('sodimac')) {
+      return 'Puntos Sodimac';
+    }
     return 'PUNTOS JUMBO MÁS';
   };
 

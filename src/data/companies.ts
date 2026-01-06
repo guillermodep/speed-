@@ -35,5 +35,11 @@ export const COMPANIES: Company[] = [
     name: 'Easy (MDH)', 
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Easy-Logo.svg/2048px-Easy-Logo.svg.png',
     empresaId: 20
+  },
+  { 
+    id: 'sodimac', 
+    name: 'Sodimac', 
+    logo: '/images/Sodimac logo.jpg',
+    empresaId: 0 // Se actualizará con el ID real de la BD
   }
 ]; 

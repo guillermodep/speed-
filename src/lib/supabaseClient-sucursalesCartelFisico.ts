@@ -22,7 +22,9 @@ export interface Sucursal {
   telefono: string;
   email: string;
   horario: string;
-  region: string;
+  latitud?: number;
+  longitud?: number;
+  mapa?: string;
 }
 
 export interface CartelFisico {

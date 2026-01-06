@@ -6,6 +6,7 @@ import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, C
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
+import { filterEnabledCompanies } from '../../lib/companySettings';
 import { supabaseAdmin } from '../../lib/supabaseClient-carteles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getLocalVideoDuration } from '../../lib/videoUtils';
@@ -467,8 +468,38 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     const loadEmpresas = async () => {
       try {
         setLoading(true);
+
+        // Inicializar Falabella si no existe
+        try {
+          const { addFalabellaToDatabase } = await import('../../lib/addFalabellaData');
+          const empresasActuales = await getEmpresas();
+          const falabellaExists = empresasActuales.some(emp => emp.nombre === 'Falabella');
+          
+          if (!falabellaExists) {
+            console.log('🏢 Falabella no encontrada. Insertando...');
+            await addFalabellaToDatabase();
+          }
+        } catch (initError) {
+          console.error('⚠️ Error al inicializar Falabella:', initError);
+        }
+
+        // Inicializar Sodimac si no existe
+        try {
+          const { addSodimacToDatabase } = await import('../../lib/addSodimacData');
+          const empresasActuales = await getEmpresas();
+          const sodimacExists = empresasActuales.some(emp => emp.nombre === 'Sodimac');
+          
+          if (!sodimacExists) {
+            console.log('🏢 Sodimac no encontrada. Insertando...');
+            await addSodimacToDatabase();
+          }
+        } catch (initError) {
+          console.error('⚠️ Error al inicializar Sodimac:', initError);
+        }
+
         const data = await getEmpresas();
-        setEmpresas(data);
+        const enabledData = filterEnabledCompanies(data);
+        setEmpresas(enabledData);
       } catch (error) {
         console.error('Error al cargar empresas:', error);
         toast.error('Error al cargar las empresas');
