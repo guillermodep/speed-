@@ -2101,7 +2101,7 @@ export default function Dashboard({
             <span className="text-4xl font-bold text-gray-900">
               {' '}👋
             </span>
-            <p className="text-gray-600 mt-2">Todos los carteles físicos y digitales en un solo lugar.</p>
+            <p className="text-gray-600 mt-2"></p>
           </div>
           <motion.span
             animate={{
